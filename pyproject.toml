@@ -7,6 +7,12 @@ authors = [
 ]
 requires-python = "==3.12"
 dependencies = [
+    "beautifulsoup4>=4.14.2",
+    "cfgrib>=0.9.15.1",
+    "matplotlib>=3.10.7",
+    "pandas>=2.3.3",
+    "requests>=2.32.5",
+    "seaborn>=0.13.2",
     "xarray>=2025.10.1",
 ]
 
