@@ -13,6 +13,7 @@ dependencies = [
     "dask>=2025.11.0",
     "matplotlib>=3.10.7",
     "nbformat>=5.10.4",
+    "open-mastr>=0.15.0",
     "pandas>=2.3.3",
     "plotly>=6.4.0",
     "requests>=2.32.5",
