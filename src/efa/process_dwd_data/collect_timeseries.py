@@ -35,22 +35,13 @@ def get_available_variables(data_path):
         parts = filename.split('_')
         
         # Determine if it's model-level or single-level
-        # Model-level format: icon-d2_de_lat-lon_model-level_YYYYMMDDHH_FFF_LEVEL_VARIABLE
-        # Single-level format: icon-d2_de_lat-lon_single-level_YYYYMMDDHH_FFF_2d_VARIABLE
-        
         if 'model-level' in filename:
-            # For model-level: variable is everything after level number
-            # icon-d2_de_lat-lon_model-level_YYYYMMDDHH_FFF_LEVEL_VARIABLE
-            # Parts: ['icon-d2', 'de', 'lat-lon', 'model-level', 'YYYYMMDDHH', 'FFF', 'LEVEL', 'VARIABLE']
             if len(parts) >= 8:
-                variable = '_'.join(parts[7:])  # Join remaining parts after level
+                variable = '_'.join(parts[7:])
                 variables.add(variable)
         elif 'single-level' in filename:
-            # For single-level: variable is everything after '2d'
-            # icon-d2_de_lat-lon_single-level_YYYYMMDDHH_FFF_2d_VARIABLE
-            # Parts: ['icon-d2', 'de', 'lat-lon', 'single-level', 'YYYYMMDDHH', 'FFF', '2d', 'VARIABLE']
             if len(parts) >= 8:
-                variable = '_'.join(parts[7:])  # Join remaining parts after '2d'
+                variable = '_'.join(parts[7:])
                 variables.add(variable)
     
     return sorted(list(variables))
@@ -98,6 +89,36 @@ def main():
             print(f"  Collected {len(combined_df)} records for {var}")
         else:
             print(f"  No data found for {var}")
+
+    # Merge all variables into single dataframe
+    if dfs:
+        # Start with first variable
+        first_var = list(dfs.keys())[0]
+        result = dfs[first_var].rename(columns={'value': first_var})
+
+        # Merge others
+        for var in list(dfs.keys())[1:]:
+            result = result.join(dfs[var].rename(columns={'value': var}), how='outer')
+
+        # Add location columns
+        result['latitude'] = lat
+        result['longitude'] = lon
+
+        # Sort by time
+        result = result.sort_index()
+
+        print(f"\nFinal dataset shape: {result.shape}")
+        print(f"Time range: {result.index.min()} to {result.index.max()}")
+        print(f"Variables collected: {list(dfs.keys())}")
+
+        # Save to parquet
+        os.makedirs(output_path, exist_ok=True)
+        output_file = os.path.join(output_path, f"timeseries_lat{lat}_lon{lon}.parquet")
+        result.to_parquet(output_file)
+        print(f"\nSaved to: {output_file}")
+
+    else:
+        print("\nNo data collected.")
 
 
 if __name__ == "__main__":
