@@ -23,6 +23,27 @@ def get_file_list(data_path, variable, forecast_hour=0):
     return sorted(files)
 
 
+def clean_index_files(file_path):
+    """
+    Remove any existing index files for a GRIB2 file.
+    
+    Args:
+        file_path (str): Path to the GRIB2 file
+    """
+    # Pattern for index files created by cfgrib
+    idx_patterns = [
+        file_path + '.*.idx',
+        file_path + '.idx'
+    ]
+    
+    for pattern in idx_patterns:
+        for idx_file in glob.glob(pattern):
+            try:
+                os.remove(idx_file)
+            except Exception:
+                pass
+
+
 def load_grib_value(file_path, lat, lon, temp_dir):
     """
     Load GRB2 file and extract value at specific lat/lon.
@@ -37,6 +58,9 @@ def load_grib_value(file_path, lat, lon, temp_dir):
     Returns:
         tuple: (valid_time, value) - The valid time and value at the location
     """
+    # Clean up any existing corrupted index files
+    clean_index_files(file_path)
+    
     # Set CFGRIB index path to temp directory
     os.environ['CFGRIB_INDEXPATH'] = temp_dir
     
