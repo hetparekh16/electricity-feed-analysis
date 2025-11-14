@@ -84,7 +84,7 @@ def main():
         if all_data:
             # Combine all forecast hours and remove duplicates (keep first)
             combined_df = pd.concat(all_data).sort_index()
-            combined_df = combined_df[~combined_df.index.duplicated(keep='first')]
+            combined_df = combined_df[~combined_df.index.duplicated(keep='last')]
             dfs[var] = combined_df
             print(f"  Collected {len(combined_df)} records for {var}")
         else:
