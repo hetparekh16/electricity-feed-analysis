@@ -47,6 +47,24 @@ def get_available_variables(data_path):
     return sorted(list(variables))
 
 
+def cleanup_idx_files(data_path):
+    """
+    Remove all .idx files from the data directory.
+    
+    Args:
+        data_path (str): Path to data directory
+    """
+    idx_pattern = os.path.join(data_path, "**", "*.idx")
+    idx_files = glob.glob(idx_pattern, recursive=True)
+    
+    for idx_file in idx_files:
+        try:
+            os.remove(idx_file)
+            print(f"Removed: {idx_file}")
+        except Exception as e:
+            print(f"Failed to remove {idx_file}: {e}")
+
+            
 def main():
     """
     Main function to collect timeseries data for DWD weather variables.
