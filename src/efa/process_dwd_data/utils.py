@@ -1,7 +1,9 @@
 import os
 import glob
 import shutil
-from datetime import datetime, timedelta
+
+os.environ['CFGRIB_INDEXPATH'] = os.path.join('data', 'temp', 'cfgrib_idx')
+
 import xarray as xr
 import pandas as pd
 import numpy as np
