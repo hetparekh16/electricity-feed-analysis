@@ -23,25 +23,20 @@ def get_available_variables(data_path, include_eps=False):
     for file_path in files:
         filename = os.path.basename(file_path)
         
-        # Skip EPS files if not requested
         if not include_eps and 'icon-d2-eps' in filename:
             continue
         
         if not filename.endswith('.grb2'):
             continue
             
-        # Remove .grb2 extension
         filename = filename.replace('.grb2', '')
-        
-        # Split by underscore
         parts = filename.split('_')
         
-        # Parse model-level files
         if 'model-level' in filename:
             # Format: icon-d2_de_lat-lon_model-level_YYYYMMDDHH_FFF_LEVEL_VARIABLE
             if len(parts) >= 8:
-                level = parts[6]  # Level number (61, 62, 63, 64)
-                variable = '_'.join(parts[7:])  # Variable name (e.g., 'u', 'v')
+                level = parts[6]  # Level number (61, 62, 63, 64) for metric name (e.g., 'u', 'v')
+                variable = '_'.join(parts[7:])
                 
                 if variable not in variables:
                     variables[variable] = {}
@@ -51,17 +46,15 @@ def get_available_variables(data_path, include_eps=False):
                 
                 variables[variable]['model-level'].add(level)
                 
-        # Parse single-level files
         elif 'single-level' in filename:
             # Format: icon-d2_de_lat-lon_single-level_YYYYMMDDHH_FFF_2d_VARIABLE
             if len(parts) >= 8:
                 # Variable is everything after '2d_'
-                variable = '_'.join(parts[7:])  # e.g., 'u_10m', 'v_10m', 't_2m', 'aswdir_s'
+                variable = '_'.join(parts[7:])  # e.g., 'u_10m', 'v_10m', 't_2m', 'aswdir_s', 'aswdifd_s'
                 
                 if variable not in variables:
                     variables[variable] = {}
                 
-                # Use None as placeholder for single-level (no model-level index)
                 variables[variable]['single-level'] = [None]
     
     # Convert sets to sorted lists
@@ -93,7 +86,6 @@ def cleanup_idx_files(data_path):
 def main():
     """
     Main function to collect timeseries data for DWD weather variables.
-    Collects only deterministic (non-EPS) forecasts.
     """
     # Configuration
     data_path = "data/historical_data"
