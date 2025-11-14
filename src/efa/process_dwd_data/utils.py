@@ -9,15 +9,31 @@ import pandas as pd
 import numpy as np
 
 
-def get_file_list(data_path, variable, forecast_hour=0):
+def get_file_list(data_path, variable, forecast_hour=0, level=None):
     """
     Get list of GRB2 files for a specific variable and forecast hour.
     Excludes ensemble prediction (icon-d2-eps) files and .idx files.
-    """
-    model_level_pattern = os.path.join(data_path, "*", f"icon-d2_de_lat-lon_model-level_*_{forecast_hour:03d}_*_{variable}.grb2")
-    single_level_pattern = os.path.join(data_path, "*", f"icon-d2_de_lat-lon_single-level_*_{forecast_hour:03d}_*_{variable}.grb2")
     
-    files = glob.glob(model_level_pattern) + glob.glob(single_level_pattern)
+    Args:
+        data_path: Path to historical data directory
+        variable: Variable name (e.g. 'u', 'v', 'u_10m', 'v_10m')
+        forecast_hour: Forecast hour (0-48)
+        level: Model level token (e.g. '61') for model-level files, None for single-level
+    """
+    if level is None:
+        # Single-level files: icon-d2_..._single-level_..._000_2d_u_10m.grb2
+        single_level_pattern = os.path.join(
+            data_path, "*",
+            f"icon-d2_de_lat-lon_single-level_*_{forecast_hour:03d}_2d_{variable}.grb2"
+        )
+        files = glob.glob(single_level_pattern)
+    else:
+        # Model-level files: icon-d2_..._model-level_..._000_61_u.grb2
+        model_level_pattern = os.path.join(
+            data_path, "*",
+            f"icon-d2_de_lat-lon_model-level_*_{forecast_hour:03d}_{level}_{variable}.grb2"
+        )
+        files = glob.glob(model_level_pattern)
     
     # Filter out .idx files and icon-d2-eps files
     files = [f for f in files if not f.endswith('.idx') and 'icon-d2-eps' not in f]
@@ -117,7 +133,7 @@ def load_grib_value(file_path, lat, lon, temp_dir):
         raise Exception(f"Error reading {file_path}: {str(e)}")
 
 
-def process_files_for_location(data_path, variable, lat, lon, forecast_hour=0):
+def process_files_for_location(data_path, variable, lat, lon, forecast_hour=0, level=None):
     """
     Process all files for a variable and location, return dataframe.
     Creates a temporary directory for index files that is cleaned up after processing.
@@ -128,11 +144,12 @@ def process_files_for_location(data_path, variable, lat, lon, forecast_hour=0):
         lat (float): Latitude
         lon (float): Longitude
         forecast_hour (int): Forecast hour
+        level (str|None): Model level token (e.g. '61') to restrict model-level files
 
     Returns:
         pd.DataFrame: DataFrame with time and value
     """
-    files = get_file_list(data_path, variable, forecast_hour)
+    files = get_file_list(data_path, variable, forecast_hour, level=level)
     data = []
 
     # Create temp directory for index files
