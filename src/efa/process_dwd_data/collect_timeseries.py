@@ -21,7 +21,7 @@ def main():
     
     print(f"\nFound {len(variables_info)} variables:")
     for var, levels in variables_info.items():
-        print(f"  {var}: {levels}")
+        print(f"{var}: {levels}")
 
     print(f"\nProcessing data for location: lat={lat}, lon={lon}")
     
@@ -66,10 +66,10 @@ def main():
         os.makedirs(output_path, exist_ok=True)
         output_file = os.path.join(output_path, f"timeseries_deterministic_lat{lat}_lon{lon}.parquet")
         result.to_parquet(output_file)
-        print(f"\n✓ Saved to: {output_file}")
+        print(f"\nSaved to: {output_file}")
 
     else:
-        print("\n✗ No data collected.")
+        print("\nNo data collected.")
 
 
 if __name__ == "__main__":
