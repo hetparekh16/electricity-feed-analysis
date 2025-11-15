@@ -1,0 +1,1 @@
+The available data is in german language. How can I join the information if one database is in german and one in english. 
