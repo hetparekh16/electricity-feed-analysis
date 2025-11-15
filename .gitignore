@@ -9,8 +9,7 @@ wheels/
 # Data
 data/*
 
-# Notes
-thesis_docs
+.obsidian
 
 # macOS
 .DS_Store
