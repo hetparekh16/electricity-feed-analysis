@@ -10,7 +10,7 @@ wheels/
 data/*
 
 # Notes
-Notes/*
+thesis_docs
 
 # macOS
 .DS_Store
