@@ -83,28 +83,8 @@ def cleanup_idx_files(data_path):
             print(f"Failed to remove {idx_file}: {e}")
 
 
-def main():
-    """
-    Main function to collect timeseries data for DWD weather variables.
-    """
-    # Configuration
-    data_path = "data/historical_data"
-    output_path = "data/processed"
-    forecast_hours = range(0, 49)  # Process forecast hours 0-48
-    
-    lat = 53.495
-    lon = 10.011
+def collect_timeseries_for_each_metric(data_path, variables_info, levels, lat, lon, forecast_hours):
 
-    # Discover available variables (deterministic only)
-    print("Discovering available variables (deterministic forecasts only)...")
-    variables_info = get_available_variables(data_path, include_eps=False)
-    
-    print(f"\nFound {len(variables_info)} variables:")
-    for var, levels in variables_info.items():
-        print(f"  {var}: {levels}")
-
-    print(f"\nProcessing data for location: lat={lat}, lon={lon}")
-    
     # Collect data for each variable, level type, and level
     dfs = {}
     
@@ -147,6 +127,38 @@ def main():
                     cleanup_idx_files(data_path)
                 else:
                     print(f"  ✗ No data found for {col_name}")
+
+
+def main():
+    """
+    Main function to collect timeseries data for DWD weather variables.
+    """
+    # Configuration
+    data_path = "data/historical_data"
+    output_path = "data/processed"
+    forecast_hours = range(0, 49)  # Process forecast hours 0-48
+    
+    lat = 53.495
+    lon = 10.011
+
+    # Discover available variables (deterministic only)
+    print("Discovering available variables (deterministic forecasts only)...")
+    variables_info = get_available_variables(data_path, include_eps=False)
+    
+    print(f"\nFound {len(variables_info)} variables:")
+    for var, levels in variables_info.items():
+        print(f"  {var}: {levels}")
+
+    print(f"\nProcessing data for location: lat={lat}, lon={lon}")
+    
+    dfs = collect_timeseries_for_each_metric(
+        data_path, 
+        variables_info, 
+        levels=None, 
+        lat=lat, 
+        lon=lon, 
+        forecast_hours=forecast_hours
+    )
 
     # Merge all variables into single dataframe
     if dfs:
