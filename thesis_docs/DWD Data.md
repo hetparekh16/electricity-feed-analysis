@@ -143,13 +143,13 @@ icon-d2_de_lat-lon_single-level_2025110900_000_2d_aswdifd_s.grb2
 
 **Available Variables/Metrics:**
 
-|**Variable Code**|**Description**|**Unit**|**Use Case**|
-|---|---|---|---|
-|**`u_10m`**|Eastward wind component at 10m height|m/s|Wind power (small turbines, surface wind)|
-|**`v_10m`**|Northward wind component at 10m height|m/s|Wind power (small turbines, surface wind)|
-|**`t_2m`**|Temperature at 2m height|K or °C|Solar panel efficiency, demand forecasting|
-|**`aswdir_s`**|Direct shortwave radiation at surface|W/m²|Solar PV power generation (direct component)|
-|**`aswdifd_s`**|Diffuse shortwave radiation at surface|W/m²|Solar PV power generation (diffuse component)|
+| **Variable Code** | **Description**                        | **Unit** | **Use Case**                                  |
+| ----------------- | -------------------------------------- | -------- | --------------------------------------------- |
+| **`u_10m`**       | Eastward wind component at 10m height  | m/s      | Wind power (small turbines, surface wind)     |
+| **`v_10m`**       | Northward wind component at 10m height | m/s      | Wind power (small turbines, surface wind)     |
+| **`t_2m`**        | Temperature at 2m height               | K or °C  | Solar panel efficiency, demand forecasting    |
+| **`aswdir_s`**    | Direct shortwave radiation at surface  | W/m²     | Solar PV power generation (direct component)  |
+| **`aswdifd_s`**   | Diffuse shortwave radiation at surface | W/m²     | Solar PV power generation (diffuse component) |
 
 ---
 ## Forecast Temporal Coverage
