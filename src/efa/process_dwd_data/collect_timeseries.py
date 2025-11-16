@@ -1,37 +1,30 @@
 import os
 import pandas as pd
 from efa.process_dwd_data.utils import get_available_variables, collect_timeseries_for_each_metric
-
+from efa import config
 
 def main():
     """
     Main function to collect timeseries data for DWD weather variables.
     """
-    # Configuration
-    data_path = "data/historical_data"
-    output_path = "data/processed"
-    forecast_hours = range(0, 49)  # Process forecast hours 0-48
-    
-    lat = 53.495
-    lon = 10.011
 
     # Discover available variables (deterministic only)
     print("Discovering available variables (deterministic forecasts only)...")
-    variables_info = get_available_variables(data_path, include_eps=False)
+    variables_info = get_available_variables(config.data_path, include_eps=False)
     
     print(f"\nFound {len(variables_info)} variables:")
     for var, levels in variables_info.items():
         print(f"{var}: {levels}")
 
-    print(f"\nProcessing data for location: lat={lat}, lon={lon}")
+    print(f"\nProcessing data for location: lat={config.lat}, lon={config.lon}")
     
     dfs = collect_timeseries_for_each_metric(
-        data_path, 
+        config.data_path, 
         variables_info, 
         levels=None, 
-        lat=lat, 
-        lon=lon, 
-        forecast_hours=forecast_hours
+        lat=config.lat, 
+        lon=config.lon, 
+        forecast_hours=config.forecast_hours
     )
 
     # Merge all variables into single dataframe
@@ -45,8 +38,8 @@ def main():
             result = result.join(dfs[var].rename(columns={'value': var}), how='outer')
 
         # Add location columns
-        result['latitude'] = lat
-        result['longitude'] = lon
+        result['latitude'] = config.lat
+        result['longitude'] = config.lon
 
         # Sort by time
         result = result.sort_index()
@@ -63,8 +56,8 @@ def main():
             print(f"  {col}: {non_null} non-null values")
 
         # Save to parquet
-        os.makedirs(output_path, exist_ok=True)
-        output_file = os.path.join(output_path, f"timeseries_deterministic_lat{lat}_lon{lon}.parquet")
+        os.makedirs(config.output_path, exist_ok=True)
+        output_file = os.path.join(config.output_path, f"timeseries_deterministic_lat{config.lat}_lon{config.lon}.parquet")
         result.to_parquet(output_file)
         print(f"\nSaved to: {output_file}")
 
