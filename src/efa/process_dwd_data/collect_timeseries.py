@@ -52,7 +52,7 @@ def main():
 
         # Save to parquet
         os.makedirs(config.output_path, exist_ok=True)
-        output_file = os.path.join(config.output_path, f"timeseries_deterministic_lat{config.lat}_lon{config.lon}.parquet")
+        output_file = os.path.join(config.output_path, "timeseries_weather_metrics.parquet")
         result.to_parquet(output_file)
         print(f"\nSaved to: {output_file}")
 
