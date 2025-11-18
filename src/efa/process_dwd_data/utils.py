@@ -234,6 +234,10 @@ def get_available_variables(data_path, include_eps=False):
             if isinstance(variables[var][level_type], set):
                 variables[var][level_type] = sorted(list(variables[var][level_type]))
     
+    print(f"\nFound {len(variables)} variables:")
+    for var, levels in variables.items():
+        print(f"{var}: {levels}")
+    
     return variables
 
 
