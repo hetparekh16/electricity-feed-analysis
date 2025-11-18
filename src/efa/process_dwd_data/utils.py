@@ -302,3 +302,4 @@ def collect_timeseries_for_each_metric(data_path, variables_info, levels, lat, l
                     cleanup_idx_files(data_path)
                 else:
                     print(f"  ✗ No data found for {col_name}")
+    return dfs
