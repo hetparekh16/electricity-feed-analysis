@@ -8,13 +8,8 @@ def main():
     Main function to collect timeseries data for DWD weather variables.
     """
 
-    # Discover available variables (deterministic only)
     print("Discovering available variables (deterministic forecasts only)...")
     variables_info = get_available_variables(config.data_path, include_eps=False)
-    
-    print(f"\nFound {len(variables_info)} variables:")
-    for var, levels in variables_info.items():
-        print(f"{var}: {levels}")
 
     print(f"\nProcessing data for location: lat={config.lat}, lon={config.lon}")
     
