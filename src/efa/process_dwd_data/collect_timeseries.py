@@ -11,7 +11,6 @@ def main():
     variables_info = get_available_variables(config.dwd_data_path, include_eps=False)
 
     print(f"\nProcessing data for location: lat={config.lat}, lon={config.lon}")
-    
     dfs = collect_timeseries_for_each_metric(
         config.dwd_data_path, 
         variables_info, 
@@ -37,6 +36,7 @@ def main():
 
         # Sort by time
         result = result.sort_index()
+        result = result.reset_index().rename(columns={'index': 'time'})
 
         print(f"\n{'='*60}")
         print(f"Final dataset summary:")
