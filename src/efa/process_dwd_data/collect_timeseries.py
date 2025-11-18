@@ -1,7 +1,6 @@
-import os
-import pandas as pd
 from efa.process_dwd_data.utils import get_available_variables, collect_timeseries_for_each_metric
 from efa import config
+from efa.core import save_to_duckdb
 
 def main():
     """
@@ -9,12 +8,12 @@ def main():
     """
 
     print("Discovering available variables (deterministic forecasts only)...")
-    variables_info = get_available_variables(config.data_path, include_eps=False)
+    variables_info = get_available_variables(config.dwd_data_path, include_eps=False)
 
     print(f"\nProcessing data for location: lat={config.lat}, lon={config.lon}")
     
     dfs = collect_timeseries_for_each_metric(
-        config.data_path, 
+        config.dwd_data_path, 
         variables_info, 
         levels=None, 
         lat=config.lat, 
@@ -50,11 +49,8 @@ def main():
             non_null = result[col].notna().sum()
             print(f"  {col}: {non_null} non-null values")
 
-        # Save to parquet
-        os.makedirs(config.output_path, exist_ok=True)
-        output_file = os.path.join(config.output_path, "timeseries_weather_metrics.parquet")
-        result.to_parquet(output_file)
-        print(f"\nSaved to: {output_file}")
+        # Save to DuckDB
+        save_to_duckdb(df=result, table_name="weather_timeseries", mode="append")
 
     else:
         print("\nNo data collected.")
