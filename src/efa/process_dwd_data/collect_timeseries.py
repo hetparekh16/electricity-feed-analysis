@@ -50,7 +50,7 @@ def main():
             print(f"  {col}: {non_null} non-null values")
 
         # Save to DuckDB
-        save_to_duckdb(df=result, table_name="weather_timeseries", mode="replace")
+        save_to_duckdb(df=result, table_name="L0_WeatherTimeseries", mode="replace")
 
     else:
         print("\nNo data collected.")
