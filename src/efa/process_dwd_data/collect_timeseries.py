@@ -1,6 +1,6 @@
 from efa.process_dwd_data.utils import get_available_variables, collect_timeseries_for_each_metric
 from efa import config
-from efa.core import save_to_duckdb
+from efa import tables
 
 def main():
     """
@@ -50,7 +50,7 @@ def main():
             print(f"  {col}: {non_null} non-null values")
 
         # Save to DuckDB
-        save_to_duckdb(df=result, table_name="L0_WeatherTimeseries", mode="replace")
+        tables.L0.DwdWeather().write(df=result, mode="replace")
 
     else:
         print("\nNo data collected.")
