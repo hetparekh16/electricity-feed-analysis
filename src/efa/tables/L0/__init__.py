@@ -1,4 +1,4 @@
-from .DwdWeather import DwdWeather
+from .dwd_weather import DwdWeather
 
 __all__ = [
     "DwdWeather",
