@@ -1,12 +1,12 @@
 import os
 import glob
 import shutil
-
+from loguru import logger
 os.environ['CFGRIB_INDEXPATH'] = os.path.join('data', 'temp', 'cfgrib_idx')
 import xarray as xr
 import pandas as pd
 import numpy as np
-
+from efa import config
 
 def get_file_list(data_path, variable, forecast_hour=0, level=None):
     """
@@ -161,7 +161,7 @@ def process_files_for_location(data_path, variable, lat, lon, forecast_hour=0, l
                 valid_time, value = load_grib_value(file_path, lat, lon, temp_dir)
                 data.append({'time': valid_time, 'value': value})
             except Exception as e:
-                print(f"Error processing {file_path}: {e}")
+                logger.info(f"Error processing {file_path}: {e}")
                 continue
     finally:
         # Cleanup temp directory
@@ -233,9 +233,9 @@ def get_available_variables(data_path, include_eps=False):
             if isinstance(variables[var][level_type], set):
                 variables[var][level_type] = sorted(list(variables[var][level_type]))
     
-    print(f"\nFound {len(variables)} variables:")
+    (f"\nFound {len(variables)} variables:")
     for var, levels in variables.items():
-        print(f"{var}: {levels}")
+        logger.info(f"{var}: {levels}")
     
     return variables
 
@@ -254,7 +254,7 @@ def cleanup_idx_files(data_path):
         try:
             os.remove(idx_file)
         except Exception as e:
-            print(f"Failed to remove {idx_file}: {e}")
+            logger.info(f"Failed to remove {idx_file}: {e}")
 
 
 def collect_timeseries_for_each_metric(data_path, variables_info, levels, lat, lon, forecast_hours):
@@ -273,7 +273,7 @@ def collect_timeseries_for_each_metric(data_path, variables_info, levels, lat, l
                     col_name = var
                     level_arg = None
                 
-                print(f"Processing {col_name}...")
+                logger.info(f"Processing {col_name}...")
                 all_data = []
                 
                 for forecast_hour in forecast_hours:
@@ -289,7 +289,7 @@ def collect_timeseries_for_each_metric(data_path, variables_info, levels, lat, l
                         if not df.empty:
                             all_data.append(df)
                     except Exception as e:
-                        print(f"  Error at forecast hour {forecast_hour}: {e}")
+                        logger.info(f"  Error at forecast hour {forecast_hour}: {e}")
                         continue
                 
                 if all_data:
@@ -297,10 +297,10 @@ def collect_timeseries_for_each_metric(data_path, variables_info, levels, lat, l
                     combined_df = pd.concat(all_data).sort_index()
                     combined_df = combined_df[~combined_df.index.duplicated(keep='last')]
                     dfs[col_name] = combined_df
-                    print(f"  ✓ Collected {len(combined_df)} records for {col_name}")
+                    logger.info(f"  ✓ Collected {len(combined_df)} records for {col_name}")
                     cleanup_idx_files(data_path)
                 else:
-                    print(f"  ✗ No data found for {col_name}")
+                    logger.info(f"  ✗ No data found for {col_name}")
     return dfs
 
 
@@ -332,17 +332,17 @@ def merge_metrics_to_dataframe(dfs):
         result = result.sort_index()
         result = result.reset_index().rename(columns={'index': 'time'})
 
-        print(f"\n{'='*60}")
-        print(f"Final dataset summary:")
-        print(f"{'='*60}")
-        print(f"Shape: {result.shape}")
-        print(f"Time range: {result.index.min()} to {result.index.max()}")
-        print(f"Columns: {list(result.columns)}")
-        print(f"\nColumn breakdown:")
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Final dataset summary:")
+        logger.info(f"{'='*60}")
+        logger.info(f"Shape: {result.shape}")
+        logger.info(f"Time range: {result.index.min()} to {result.index.max()}")
+        logger.info(f"Columns: {list(result.columns)}")
+        logger.info(f"\nColumn breakdown:")
         for col in result.columns:
             non_null = result[col].notna().sum()
-            print(f"  {col}: {non_null} non-null values")
+            logger.info(f"  {col}: {non_null} non-null values")
         return result
 
     else:
-        print("\nNo data collected.")
+        logger.info("\nNo data collected.")
