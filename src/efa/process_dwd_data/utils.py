@@ -3,7 +3,6 @@ import glob
 import shutil
 
 os.environ['CFGRIB_INDEXPATH'] = os.path.join('data', 'temp', 'cfgrib_idx')
-
 import xarray as xr
 import pandas as pd
 import numpy as np
@@ -303,3 +302,47 @@ def collect_timeseries_for_each_metric(data_path, variables_info, levels, lat, l
                 else:
                     print(f"  ✗ No data found for {col_name}")
     return dfs
+
+
+def merge_metrics_to_dataframe(dfs):
+    """
+    Merge individual metric DataFrames into a single DataFrame.
+    
+    Args:
+        dfs (dict): Dictionary of DataFrames with metric names as keys.
+        
+    Returns:
+        pd.DataFrame: Merged DataFrame with all metrics.
+    """
+        # Merge all variables into single dataframe
+    if dfs:
+        # Start with first variable
+        first_var = list(dfs.keys())[0]
+        result = dfs[first_var].rename(columns={'value': first_var})
+
+        # Merge others
+        for var in list(dfs.keys())[1:]:
+            result = result.join(dfs[var].rename(columns={'value': var}), how='outer')
+
+        # Add location columns
+        result['latitude'] = config.lat
+        result['longitude'] = config.lon
+
+        # Sort by time
+        result = result.sort_index()
+        result = result.reset_index().rename(columns={'index': 'time'})
+
+        print(f"\n{'='*60}")
+        print(f"Final dataset summary:")
+        print(f"{'='*60}")
+        print(f"Shape: {result.shape}")
+        print(f"Time range: {result.index.min()} to {result.index.max()}")
+        print(f"Columns: {list(result.columns)}")
+        print(f"\nColumn breakdown:")
+        for col in result.columns:
+            non_null = result[col].notna().sum()
+            print(f"  {col}: {non_null} non-null values")
+        return result
+
+    else:
+        print("\nNo data collected.")

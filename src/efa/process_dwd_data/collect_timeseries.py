@@ -1,4 +1,4 @@
-from efa.process_dwd_data.utils import get_available_variables, collect_timeseries_for_each_metric
+from efa.process_dwd_data.utils import get_available_variables, collect_timeseries_for_each_metric, merge_metrics_to_dataframe
 from efa import config
 from efa import tables
 
@@ -20,41 +20,10 @@ def main():
         forecast_hours=config.forecast_hours
     )
 
-    # Merge all variables into single dataframe
-    if dfs:
-        # Start with first variable
-        first_var = list(dfs.keys())[0]
-        result = dfs[first_var].rename(columns={'value': first_var})
+    result = merge_metrics_to_dataframe(dfs)
 
-        # Merge others
-        for var in list(dfs.keys())[1:]:
-            result = result.join(dfs[var].rename(columns={'value': var}), how='outer')
-
-        # Add location columns
-        result['latitude'] = config.lat
-        result['longitude'] = config.lon
-
-        # Sort by time
-        result = result.sort_index()
-        result = result.reset_index().rename(columns={'index': 'time'})
-
-        print(f"\n{'='*60}")
-        print(f"Final dataset summary:")
-        print(f"{'='*60}")
-        print(f"Shape: {result.shape}")
-        print(f"Time range: {result.index.min()} to {result.index.max()}")
-        print(f"Columns: {list(result.columns)}")
-        print(f"\nColumn breakdown:")
-        for col in result.columns:
-            non_null = result[col].notna().sum()
-            print(f"  {col}: {non_null} non-null values")
-
-        # Save to DuckDB
-        tables.L0.DwdWeather().write(df=result, mode="replace")
-
-    else:
-        print("\nNo data collected.")
-
+    # Save to DuckDB
+    tables.L0.DwdWeather().write(df=result, mode="replace")
 
 if __name__ == "__main__":
     main()
