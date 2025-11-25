@@ -1,7 +1,8 @@
 import os
 import pandas as pd
 import duckdb
-import pandera as pa
+import pandera.pandas as pa
+import pandera.errors
 from pathlib import Path
 from loguru import logger
 from typing import Literal
@@ -60,7 +61,7 @@ class Table:
             # Validate only structure (no data checks)
             self.schema.validate(df.head(0), lazy=True)
             logger.info("Shallow validation passed ✅")
-        except pa.errors.SchemaError as ex:
+        except pandera.errors.SchemaError as ex:
             logger.error(f"Shallow validation failed: {ex}")
             raise Exception("❌ Shallow validation failed with schema mismatch!")
     
@@ -81,7 +82,7 @@ class Table:
         try:
             self.schema.validate(df, lazy=False)
             logger.info("Deep validation passed ✅")
-        except (pa.errors.SchemaError, pa.errors.SchemaErrors) as ex:
+        except (pandera.errors.SchemaError, pandera.errors.SchemaErrors) as ex:
             logger.error(f"Deep validation failed: {ex}")
             if hasattr(ex, 'failure_cases'):
                 logger.debug(f"Failure cases:\n{ex.failure_cases}")

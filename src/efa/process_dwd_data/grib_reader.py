@@ -15,7 +15,7 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 os.environ['CFGRIB_INDEXPATH'] = str(TEMP_DIR)
 
 
-def extract_multiple_points(file_path: str, locations: list[dict]) -> dict[int, tuple[pd.Timestamp, float]]:
+def extract_multiple_points(file_path: str, locations: list[dict], direct_read: bool = True) -> dict[int, tuple[pd.Timestamp, float]]:
     """Extract values for multiple locations from a single GRIB file.
     
     This is much faster than reading the file multiple times.
@@ -23,21 +23,33 @@ def extract_multiple_points(file_path: str, locations: list[dict]) -> dict[int, 
     Args:
         file_path: Path to GRIB2 file
         locations: List of dicts with 'lat', 'lon' keys
+        direct_read: If True, read directly from source without copying (faster)
         
     Returns:
         Dict mapping location_index -> (valid_time, value)
     """
-    # Copy to temp (cfgrib needs write access for index)
-    temp_file = TEMP_DIR / Path(file_path).name
+    path_obj = Path(file_path)
     
-    # Remove if already exists to avoid permission issues
-    if temp_file.exists():
-        temp_file.unlink()
-    
-    shutil.copy(file_path, temp_file)
+    if direct_read:
+        # Use a unique index file path for this process/file to avoid collisions
+        # We hash the full path to get a unique but consistent filename
+        import hashlib
+        file_hash = hashlib.md5(str(path_obj).encode()).hexdigest()
+        index_path = TEMP_DIR / f"{path_obj.name}_{file_hash}.idx"
+        
+        target_file = path_obj
+        backend_kwargs = {'indexpath': str(index_path)}
+    else:
+        # Copy to temp (legacy mode)
+        target_file = TEMP_DIR / path_obj.name
+        # Remove if already exists to avoid permission issues
+        if target_file.exists():
+            target_file.unlink()
+        shutil.copy(file_path, target_file)
+        backend_kwargs = {}
     
     try:
-        ds = xr.open_dataset(temp_file, engine='cfgrib')
+        ds = xr.open_dataset(target_file, engine='cfgrib', backend_kwargs=backend_kwargs)
         var_name = list(ds.data_vars)[0]
         
         # Get valid time once
@@ -52,20 +64,37 @@ def extract_multiple_points(file_path: str, locations: list[dict]) -> dict[int, 
         results = {}
         for idx, loc in enumerate(locations):
             try:
-                value = float(ds[var_name].sel(
+                val_array = ds[var_name].sel(
                     latitude=loc['lat'], 
                     longitude=loc['lon'], 
                     method='nearest'
-                ).values)
+                )
+                
+                if val_array.size > 1:
+                    # If multiple values (e.g. multiple steps/members), take the first one
+                    value = float(val_array.values.flat[0])
+                else:
+                    value = float(val_array.values)
                 results[idx] = (time, value)
             except Exception as e:
-                logger.debug(f"Failed to extract location {idx} from {Path(file_path).name}: {e}")
+                logger.debug(f"Failed to extract location {idx} from {path_obj.name}: {e}")
                 continue
         
-        return results
-    finally:
         ds.close()
-        _cleanup_temp_file(temp_file)
+        return results
+        
+    finally:
+        if not direct_read:
+            _cleanup_temp_file(target_file)
+        # For direct read, we might want to keep the index for reuse, or clean it up.
+        # Given the volume of files (20k), keeping 20k index files might fill up inodes/space.
+        # Let's clean up index files for now to be safe.
+        if direct_read:
+             # Clean up the specific index file if we can identify it
+             # cfgrib usually creates file.idx or file.hash.idx
+             # A simple glob in TEMP_DIR for the filename should work
+             for idx_file in TEMP_DIR.glob(f"{path_obj.name}*.idx"):
+                 idx_file.unlink(missing_ok=True)
 
 
 def _cleanup_temp_file(temp_file: Path) -> None:
