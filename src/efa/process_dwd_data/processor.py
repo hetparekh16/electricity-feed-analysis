@@ -1,4 +1,4 @@
-import pandas as pd
+import polars as pl
 from loguru import logger
 from collections import defaultdict
 from pathlib import Path
@@ -29,7 +29,7 @@ def _process_chunk(args):
 
 
 def process_variable_from_files(variable: str, level: str | None, 
-                                file_paths: list[Path], locations: list[dict]) -> dict[int, pd.Series]:
+                                file_paths: list[Path], locations: list[dict]) -> dict[int, pl.DataFrame]:
     """Process pre-discovered files for all locations using PARALLEL processing.
 
     Parameters
@@ -45,8 +45,8 @@ def process_variable_from_files(variable: str, level: str | None,
 
     Returns
     -------
-    dict[int, pd.Series]
-        Dict mapping location_index -> pd.Series (timeseries).
+    dict[int, pl.DataFrame]
+        Dict mapping location_index -> pl.DataFrame (time, value).
     """
     col_name = f"{variable}_level{level}" if level else variable
     logger.info(f"Processing {col_name} ({len(file_paths)} files) with parallel processing...")
@@ -85,26 +85,32 @@ def process_variable_from_files(variable: str, level: str | None,
     if total_failed > 0:
         logger.warning(f"Failed to process {total_failed} files")
     
-    # Convert to Series for each location
-    result_series = {}
+    # Convert to DataFrame for each location
+    result_dfs = {}
     for loc_idx, data in location_data.items():
         if not data:
             logger.warning(f"No data collected for {col_name} at location {loc_idx}")
-            result_series[loc_idx] = pd.Series(dtype=float)
+            # Return empty DataFrame with correct schema
+            result_dfs[loc_idx] = pl.DataFrame({"time": [], "value": []}, schema={"time": pl.Datetime, "value": pl.Float64})
             continue
         
-        # Create Series and remove duplicates
-        df = pd.DataFrame(data).set_index('time')['value']
-        df = df[~df.index.duplicated(keep='last')].sort_index()
-        result_series[loc_idx] = df
+        # Create DataFrame and remove duplicates
+        # Polars is much faster at this
+        df = pl.DataFrame(data)
+        
+        # Ensure time is sorted and unique
+        df = df.unique(subset=["time"], keep="last").sort("time")
+        
+        # Return the full DataFrame (time, value) so we can join later
+        result_dfs[loc_idx] = df
         
         logger.debug(f"Location {loc_idx}: {len(df)} records")
     
     logger.info(f"✓ Success rate: {total_processed}/{len(file_paths)} ({100*total_processed/len(file_paths):.1f}%)")
     
-    return result_series
+    return result_dfs
 
-def build_dataset(all_location_data: dict, locations: list[dict]) -> pd.DataFrame:
+def build_dataset(all_location_data: dict, locations: list[dict]) -> pl.DataFrame:
     """Build final dataset from collected series.
 
     Parameters
@@ -116,24 +122,44 @@ def build_dataset(all_location_data: dict, locations: list[dict]) -> pd.DataFram
 
     Returns
     -------
-    pd.DataFrame
+    pl.DataFrame
         Combined DataFrame for all locations.
     """
     logger.info("\n\nStep 4: Building DataFrames for each location...")
     location_dataframes = []
     
-    for loc_idx, series_dict in all_location_data.items():
-        df = pd.DataFrame(series_dict)
-        df = df.reset_index().rename(columns={'index': 'time'})
+    for loc_idx, var_data in all_location_data.items():
+        # var_data is {col_name: pl.DataFrame(time, value)}
+        
+        # Start with the first variable's dataframe
+        if not var_data:
+            continue
+            
+        # Sort keys to be deterministic
+        keys = sorted(var_data.keys())
+        
+        # Base df is the first one
+        base_df = var_data[keys[0]].rename({"value": keys[0]})
+        
+        # Join others
+        for key in keys[1:]:
+            other_df = var_data[key].rename({"value": key})
+            base_df = base_df.join(other_df, on="time", how="outer_coalesce")
+            
+        df = base_df.sort("time")
         
         # Add location metadata
-        df['latitude'] = locations[loc_idx]['lat']
-        df['longitude'] = locations[loc_idx]['lon']
+        df = df.with_columns([
+            pl.lit(locations[loc_idx]['lat']).alias('latitude'),
+            pl.lit(locations[loc_idx]['lon']).alias('longitude')
+        ])
         
         location_dataframes.append(df)
         
         logger.info(f"Location {loc_idx}: shape={df.shape}, time range={df['time'].min()} to {df['time'].max()}")
     
-    # Combine all locations into single DataFrame
-    combined_df = pd.concat(location_dataframes, ignore_index=True)
+    if not location_dataframes:
+        return pl.DataFrame()
+        
+    combined_df = pl.concat(location_dataframes)
     return combined_df

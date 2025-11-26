@@ -1,5 +1,5 @@
 """Main script for collecting DWD timeseries data."""
-import pandas as pd
+import polars as pl
 from loguru import logger
 from collections import defaultdict
 from pathlib import Path
@@ -41,7 +41,7 @@ def discover_resources() -> tuple[dict, dict]:
     return variables, all_files
 
 
-def collect_all_variables(variables: dict, all_files: dict) -> pd.DataFrame:
+def collect_all_variables(variables: dict, all_files: dict) -> pl.DataFrame:
     """Collect data for all variables and build the final dataset.
 
     Parameters
@@ -53,11 +53,11 @@ def collect_all_variables(variables: dict, all_files: dict) -> pd.DataFrame:
 
     Returns
     -------
-    pd.DataFrame
+    pl.DataFrame
         Combined DataFrame containing all variables for all locations.
     """
     logger.info("Step 3: Processing variables (batch mode - all locations at once)...")
-    all_location_data = defaultdict(dict)  # location_index -> {col_name -> Series}
+    all_location_data = defaultdict(dict)  # location_index -> {col_name -> DataFrame}
     
     total_vars = sum(len(levels) for levels in variables.values())
     current = 0
@@ -77,30 +77,30 @@ def collect_all_variables(variables: dict, all_files: dict) -> pd.DataFrame:
             file_paths = all_files[key]
             
             # Process all locations at once from these files
-            location_series = processor.process_variable_from_files(
+            location_dfs = processor.process_variable_from_files(
                 var, level, file_paths, config.locations
             )
             
-            # Store series for each location
-            for loc_idx, series in location_series.items():
-                all_location_data[loc_idx][col_name] = series
+            # Store dataframe for each location
+            for loc_idx, df in location_dfs.items():
+                all_location_data[loc_idx][col_name] = df
     
     # Step 4: Build DataFrames
     return processor.build_dataset(all_location_data, config.locations)
 
 
-def save_data(df: pd.DataFrame) -> None:
+def save_data(df: pl.DataFrame) -> None:
     """Write the collected data to the database.
 
     Parameters
     ----------
-    df : `pd.DataFrame`
+    df : `pl.DataFrame`
         The DataFrame to write.
     """
     logger.info("\nStep 5: Writing to database...")
     logger.info(f"Combined dataset shape: {df.shape}")
     logger.info(f"Time range: {df['time'].min()} to {df['time'].max()}")
-    logger.info(f"Missing values: {df.isna().sum().sum()}")
+    logger.info(f"Missing values: {df.null_count().sum().sum()}")
     
     tables.L0.DwdWeather().write(df=df, mode="replace")
     logger.info("✓ Data successfully written to database")

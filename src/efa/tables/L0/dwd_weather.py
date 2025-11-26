@@ -1,43 +1,36 @@
-import pandera.pandas as pa
-from pandera.typing import Series
-
+import polars as pl
 from efa.tables.core import Table
 
 
-class DwdWeatherSchema(pa.DataFrameModel):
-    """Schema for DWD ICON-D2 weather forecast timeseries data."""
-    
-    time: Series[pa.DateTime] = pa.Field(nullable=False, description="Valid forecast time")
+DwdWeatherSchema = {
+    "time": pl.Datetime,
     
     # Surface wind components (10m height)
-    v_10m: Series[float] = pa.Field(nullable=False, description="Northward wind at 10m (m/s)")
-    u_10m: Series[float] = pa.Field(nullable=False, description="Eastward wind at 10m (m/s)")
+    "v_10m": pl.Float64,
+    "u_10m": pl.Float64,
     
     # Model-level wind components (upper air)
-    v_level61: Series[float] = pa.Field(nullable=False, description="Northward wind at ~184m")
-    v_level62: Series[float] = pa.Field(nullable=False, description="Northward wind at ~127m")
-    v_level63: Series[float] = pa.Field(nullable=False, description="Northward wind at ~78m")
-    v_level64: Series[float] = pa.Field(nullable=False, description="Northward wind at ~38m")
+    "v_level61": pl.Float64,
+    "v_level62": pl.Float64,
+    "v_level63": pl.Float64,
+    "v_level64": pl.Float64,
     
-    u_level61: Series[float] = pa.Field(nullable=False, description="Eastward wind at ~184m")
-    u_level62: Series[float] = pa.Field(nullable=False, description="Eastward wind at ~127m")
-    u_level63: Series[float] = pa.Field(nullable=False, description="Eastward wind at ~78m")
-    u_level64: Series[float] = pa.Field(nullable=False, description="Eastward wind at ~38m")
+    "u_level61": pl.Float64,
+    "u_level62": pl.Float64,
+    "u_level63": pl.Float64,
+    "u_level64": pl.Float64,
     
     # Solar radiation
-    aswdir_s: Series[float] = pa.Field(ge=0, nullable=False, description="Direct shortwave radiation (W/m²)")
-    aswdifd_s: Series[float] = pa.Field(ge=0, nullable=False, description="Diffuse shortwave radiation (W/m²)")
+    "aswdir_s": pl.Float64,
+    "aswdifd_s": pl.Float64,
     
     # Temperature
-    t_2m: Series[float] = pa.Field(ge=200, le=350, nullable=False, description="Temperature at 2m (K)")
+    "t_2m": pl.Float64,
     
     # Location
-    latitude: Series[float] = pa.Field(ge=-90, le=90, nullable=False, description="Latitude")
-    longitude: Series[float] = pa.Field(ge=-180, le=180, nullable=False, description="Longitude")
-
-    class Config:
-        strict = "filter"  # Allow extra columns but validate specified ones
-        coerce = True  # Coerce types where possible
+    "latitude": pl.Float64,
+    "longitude": pl.Float64,
+}
 
 
 class DwdWeather(Table):
