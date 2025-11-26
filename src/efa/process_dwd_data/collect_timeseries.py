@@ -7,6 +7,7 @@ from pathlib import Path
 from efa import config, tables
 from efa.process_dwd_data import grib_reader, file_discovery, processor
 
+DATA_PATH = config.dwd_data_path
 
 def discover_resources() -> tuple[dict, dict]:
     """Discover available variables and files.
@@ -27,14 +28,14 @@ def discover_resources() -> tuple[dict, dict]:
     
     # Step 1: Discover variables
     logger.info("\nStep 1: Discovering available variables...")
-    variables = file_discovery.discover_variables(config.dwd_data_path)
+    variables = file_discovery.discover_variables(DATA_PATH)
     total_vars = sum(len(levels) for levels in variables.values())
     logger.info(f"Found {total_vars} variable-level combinations")
     logger.info(f"Variables: {list(variables.keys())}")
     
     # Step 2: Find ALL files at once (BIG TIME SAVER!)
     logger.info("\nStep 2: Finding all files (ONE-TIME SCAN of all directories)...")
-    all_files = file_discovery.find_all_files_once(config.dwd_data_path, max_forecast_hours=2)
+    all_files = file_discovery.find_all_files_once(DATA_PATH, max_forecast_hours=2)
     logger.info("✓ File discovery complete!\n")
     
     return variables, all_files
