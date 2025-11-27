@@ -2,8 +2,6 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-forecast_hours = list(range(0, 49))  # 0 to 48 hours 
-
 # Multiple locations (lat, lon pairs)
 locations = [
     {'lat': 53.908585, 'lon': 9.193248},   # Location 1
