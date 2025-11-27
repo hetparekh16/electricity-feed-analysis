@@ -16,7 +16,7 @@ def _process_chunk(args):
     for file_path in file_paths:
         try:
             # Use direct read (True) for better performance
-            file_results = grib_reader.extract_multiple_points(str(file_path), locations, direct_read=True)
+            file_results = grib_reader.extract_multiple_points(file_path, locations, direct_read=True)
             
             for loc_idx, (time, value) in file_results.items():
                 results[loc_idx].append({'time': time, 'value': value})

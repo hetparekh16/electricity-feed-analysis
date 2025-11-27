@@ -1,3 +1,7 @@
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 forecast_hours = list(range(0, 49))  # 0 to 48 hours 
 
 # Multiple locations (lat, lon pairs)
@@ -8,7 +12,6 @@ locations = [
     {'lat': 51.160670, 'lon': 12.410260},  # Energiepark
 ]
 
-
-dwd_data_path = "data/historical_data"
+dwd_data_path = PROJECT_ROOT / "data" / "historical_data"
 remote_path = 'smb://triton.ieet.tuhh.de/dwd-data/'
 mount_path = '/Volumes/dwd-data/'

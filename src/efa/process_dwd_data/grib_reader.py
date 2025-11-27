@@ -15,7 +15,7 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 os.environ['CFGRIB_INDEXPATH'] = str(TEMP_DIR)
 
 
-def extract_multiple_points(file_path: str, locations: list[dict], direct_read: bool = True) -> dict[int, tuple[pd.Timestamp, float]]:
+def extract_multiple_points(file_path: Path, locations: list[dict], direct_read: bool = True) -> dict[int, tuple[pd.Timestamp, float]]:
     """Extract values for multiple locations from a single GRIB file.
     
     This is much faster than reading the file multiple times.
@@ -28,7 +28,7 @@ def extract_multiple_points(file_path: str, locations: list[dict], direct_read: 
     Returns:
         Dict mapping location_index -> (valid_time, value)
     """
-    path_obj = Path(file_path)
+    path_obj = file_path
     
     if direct_read:
         # Use a unique index file path for this process/file to avoid collisions

@@ -4,7 +4,7 @@ from loguru import logger
 from collections import defaultdict
 
 
-def discover_variables(data_path: str) -> dict[str, list[str | None]]:
+def discover_variables(data_path: Path) -> dict[str, list[str | None]]:
     """Discover available variables by scanning one folder.
     
     Args:
@@ -15,7 +15,7 @@ def discover_variables(data_path: str) -> dict[str, list[str | None]]:
         Example: {'u': ['61', '62'], 't_2m': [None]}
     """
     # Find first valid subdirectory (skip 'today' if present)
-    base_path = Path(data_path)
+    base_path = data_path
     sample_dir = None
     for subdir in sorted(base_path.iterdir()):
         if subdir.is_dir() and subdir.name != 'today':
@@ -63,7 +63,7 @@ def discover_variables(data_path: str) -> dict[str, list[str | None]]:
     return variables
 
 
-def find_variable_files(data_path: str, variable: str, level: str | None = None, 
+def find_variable_files(data_path: Path, variable: str, level: str | None = None, 
                        max_forecast_hours: int = 2) -> list[tuple[Path, int]]:
     """Find files for a variable, only first N hours from each run.
     
@@ -88,7 +88,7 @@ def find_variable_files(data_path: str, variable: str, level: str | None = None,
         pattern = f"icon-d2_de_lat-lon_single-level_*_???_2d_{variable}.grb2"
     
     logger.info(f"Collecting first {max_forecast_hours + 1} hours (000-{max_forecast_hours:03d}) from each run...")
-    base_path = Path(data_path)
+    base_path = data_path
     
     # Get sorted list of run directories
     run_dirs = sorted([d for d in base_path.iterdir() if d.is_dir() and d.name != 'today'])
@@ -120,7 +120,7 @@ def find_variable_files(data_path: str, variable: str, level: str | None = None,
     return files_to_process
 
 
-def find_all_files_once(data_path: str, max_forecast_hours: int = 2) -> dict[tuple, list[Path]]:
+def find_all_files_once(data_path: Path, max_forecast_hours: int = 2) -> dict[tuple, list[Path]]:
     """Find ALL files for ALL variables in one scan.
     
     This is much faster than scanning directories separately for each variable.
@@ -135,7 +135,7 @@ def find_all_files_once(data_path: str, max_forecast_hours: int = 2) -> dict[tup
     """
     logger.info(f"Scanning all directories ONCE for all variables (forecast hours 0-{max_forecast_hours})...")
     
-    base_path = Path(data_path)
+    base_path = data_path
     run_dirs = sorted([d for d in base_path.iterdir() if d.is_dir() and d.name != 'today'])
     total_dirs = len(run_dirs)
     logger.info(f"Found {total_dirs} run directories to scan")
