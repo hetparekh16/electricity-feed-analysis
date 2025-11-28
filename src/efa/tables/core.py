@@ -59,12 +59,12 @@ class Table:
         # Check columns exist
         missing_cols = [col for col in self.schema if col not in df.columns]
         if missing_cols:
-            raise Exception(f"❌ Schema validation failed! Missing columns: {missing_cols}")
+            raise Exception(f"Schema validation failed! Missing columns: {missing_cols}")
             
         # Check types (basic check)
         # Note: Polars types might be strict, so we just check if they are compatible if needed
         # For now, we trust DuckDB/Polars to handle type conversion or error out on write
-        logger.info("Schema validation passed ✅")
+        logger.info("Schema validation passed")
 
     def write(
         self,

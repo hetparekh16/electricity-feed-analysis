@@ -36,7 +36,7 @@ def discover_resources() -> tuple[dict, dict]:
     # Step 2: Find ALL files at once (BIG TIME SAVER!)
     logger.info("\nStep 2: Finding all files (ONE-TIME SCAN of all directories)...")
     all_files = file_discovery.find_all_files_once(DATA_PATH, max_forecast_hours=2)
-    logger.info("✓ File discovery complete!\n")
+    logger.info("File discovery complete!\n")
     
     return variables, all_files
 
@@ -103,7 +103,7 @@ def save_data(df: pl.DataFrame) -> None:
     logger.info(f"Missing values: {df.null_count().sum().sum()}")
     
     tables.L0.DwdWeather().write(df=df, mode="replace")
-    logger.info("✓ Data successfully written to database")
+    logger.info("Data successfully written to database")
 
 
 def run():
@@ -131,7 +131,7 @@ def run():
         # 4. Cleanup
         logger.info("\nStep 6: Cleaning up temporary files...")
         grib_reader.cleanup_all()
-        logger.info("✓ Cleanup complete")
+        logger.info("Cleanup complete")
         logger.info("=" * 60)
 
 

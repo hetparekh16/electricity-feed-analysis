@@ -185,6 +185,6 @@ def find_all_files_once(data_path: Path, max_forecast_hours: int = 2) -> dict[tu
             files_by_var[key].append(file_path)
     
     total_files = sum(len(files) for files in files_by_var.values())
-    logger.info(f"✓ Found {total_files} files for {len(files_by_var)} variable-level combinations")
+    logger.info(f"Found {total_files} files for {len(files_by_var)} variable-level combinations")
     
     return files_by_var

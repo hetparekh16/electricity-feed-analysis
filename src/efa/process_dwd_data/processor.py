@@ -106,7 +106,7 @@ def process_variable_from_files(variable: str, level: str | None,
         
         logger.debug(f"Location {loc_idx}: {len(df)} records")
     
-    logger.info(f"✓ Success rate: {total_processed}/{len(file_paths)} ({100*total_processed/len(file_paths):.1f}%)")
+    logger.info(f"Success rate: {total_processed}/{len(file_paths)} ({100*total_processed/len(file_paths):.1f}%)")
     
     return result_dfs
 
