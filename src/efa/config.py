@@ -20,4 +20,4 @@ mount_path_mac = '/Volumes/dwd-data/'
 
 # Windows
 remote_path_win = r'\\triton.ieet.tuhh.de\dwd-data\\'
-mount_path_win = r"Z:\\dwd-data\"
+mount_path_win = r'Z:\\dwd-data\\'
