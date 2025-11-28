@@ -89,23 +89,6 @@ def collect_all_variables(variables: dict, all_files: dict) -> pl.DataFrame:
     return processor.build_dataset(all_location_data, config.locations)
 
 
-def save_data(df: pl.DataFrame) -> None:
-    """Write the collected data to the database.
-
-    Parameters
-    ----------
-    df : `pl.DataFrame`
-        The DataFrame to write.
-    """
-    logger.info("\nStep 5: Writing to database...")
-    logger.info(f"Combined dataset shape: {df.shape}")
-    logger.info(f"Time range: {df['time'].min()} to {df['time'].max()}")
-    logger.info(f"Missing values: {df.null_count().sum().sum()}")
-    
-    tables.L0.DwdWeather().write(df=df, mode="replace")
-    logger.info("Data successfully written to database")
-
-
 def run():
     """Execute the DWD data collection pipeline.
 
@@ -123,9 +106,8 @@ def run():
         combined_df = collect_all_variables(variables, all_files)
         
         # 3. Save data
-        save_data(combined_df)
-        
-        logger.success("------ Pipeline completed successfully! ------")
+        tables.L0.DwdWeather().write(df=combined_df, mode="replace")
+        logger.info("Data successfully written to database")
         
     finally:
         # 4. Cleanup
