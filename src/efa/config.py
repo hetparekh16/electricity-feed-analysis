@@ -11,5 +11,11 @@ locations = [
 ]
 
 dwd_data_path = PROJECT_ROOT / "data" / "historical_data"
-remote_path = 'smb://triton.ieet.tuhh.de/dwd-data/'
-mount_path = '/Volumes/dwd-data/'
+
+# Mac
+remote_path_mac = 'smb://triton.ieet.tuhh.de/dwd-data/'
+mount_path_mac = '/Volumes/dwd-data/'
+
+# Windows
+remote_path_win = r'\\triton.ieet.tuhh.de\dwd-data\\'
+mount_path_win = r"Z:\\dwd-data\"
