@@ -10,6 +10,8 @@ locations = [
     {'lat': 51.160670, 'lon': 12.410260},  # Energiepark
 ]
 
+# Only one of the following should be set
+# Local path
 dwd_data_path = PROJECT_ROOT / "data" / "historical_data"
 
 # Mac
