@@ -2,6 +2,42 @@
 from pathlib import Path
 from loguru import logger
 from collections import defaultdict
+import re
+
+
+def parse_dwd_filename(filename: str) -> dict | None:
+    """Parse DWD GRIB2 filename using regex.
+    
+    Matches patterns like:
+    - icon-d2_de_lat-lon_model-level_2021010100_000_61_u.grb2
+    - icon-d2_de_lat-lon_single-level_2021010100_000_2d_t_2m.grb2
+    """
+    # Regex pattern with named groups
+    pattern = r"icon-d2_de_lat-lon_(?P<type>model-level|single-level)_(?P<date>\d{10})_(?P<hour>\d{3})_(?P<level_or_2d>.*?)_(?P<var>.*)\.grb2"
+    match = re.match(pattern, filename)
+    
+    if not match:
+        return None
+        
+    data = match.groupdict()
+    
+    if data['type'] == 'model-level':
+        return {
+            'type': 'model-level',
+            'date': data['date'],
+            'forecast_hour': int(data['hour']),
+            'level': data['level_or_2d'],
+            'variable': data['var']
+        }
+    else:
+        # single-level
+        return {
+            'type': 'single-level',
+            'date': data['date'],
+            'forecast_hour': int(data['hour']),
+            'level': None,
+            'variable': data['var']
+        }
 
 
 def discover_variables(data_path: Path) -> dict[str, list[str | None]]:
@@ -29,30 +65,31 @@ def discover_variables(data_path: Path) -> dict[str, list[str | None]]:
     
     variables = {}
     
-    # Model-level files: icon-d2_de_lat-lon_model-level_*_???_61_u.grb2
-    for file_path in sample_dir.glob("icon-d2_de_lat-lon_model-level_*.grb2"):
+    # Scan files using regex parser
+    for file_path in sample_dir.glob("icon-d2_de_*.grb2"):
         if 'icon-d2-eps' in file_path.name:
             continue
-        
-        parts = file_path.stem.split('_')
-        level = parts[6]  # e.g., "61"
-        var = parts[7]    # e.g., "u"
+            
+        parsed = parse_dwd_filename(file_path.name)
+        if not parsed:
+            continue
+            
+        var = parsed['variable']
+        level = parsed['level']
         
         if var not in variables:
             variables[var] = []
-        if level not in variables[var]:
-            variables[var].append(level)
-    
-    # Single-level files: icon-d2_de_lat-lon_single-level_*_???_2d_t_2m.grb2
-    for file_path in sample_dir.glob("icon-d2_de_lat-lon_single-level_*.grb2"):
-        if 'icon-d2-eps' in file_path.name:
-            continue
-        
-        parts = file_path.stem.split('_')
-        var = '_'.join(parts[7:])  # e.g., "t_2m", "u_10m"
-        
-        if var not in variables:
-            variables[var] = [None]
+            
+        # For single-level, level is None. For model-level, it's a string.
+        # We need to handle the list structure correctly.
+        if level is None:
+            # Single level variable
+            if None not in variables[var]:
+                variables[var].append(None)
+        else:
+            # Model level variable
+            if level not in variables[var]:
+                variables[var].append(level)
     
     # Sort levels for consistency
     for var in variables:
@@ -107,9 +144,12 @@ def find_variable_files(data_path: Path, variable: str, level: str | None = None
             if 'icon-d2-eps' in file_path.name:
                 continue
             
-            # Extract forecast hour from filename
-            parts = file_path.stem.split('_')
-            forecast_hour = int(parts[5])
+            # Extract forecast hour using regex
+            parsed = parse_dwd_filename(file_path.name)
+            if not parsed:
+                continue
+                
+            forecast_hour = parsed['forecast_hour']
             
             # Only keep files within our hour range (0, 1, 2)
             if forecast_hour <= max_forecast_hours:
@@ -153,34 +193,19 @@ def find_all_files_once(data_path: Path, max_forecast_hours: int = 2) -> dict[tu
             if 'icon-d2-eps' in file_path.name:
                 continue
             
-            parts = file_path.stem.split('_')
-            
-            # Extract forecast hour
-            try:
-                forecast_hour = int(parts[5])
-            except (IndexError, ValueError):
+            parsed = parse_dwd_filename(file_path.name)
+            if not parsed:
                 continue
+                
+            forecast_hour = parsed['forecast_hour']
             
             # Only keep first N hours
             if forecast_hour > max_forecast_hours:
                 continue
-            
-            # Parse variable and level
-            if 'model-level' in file_path.name:
-                # Model-level: icon-d2_de_lat-lon_model-level_*_???_61_u.grb2
-                try:
-                    level = parts[6]
-                    var = parts[7]
-                    key = (var, level)
-                except IndexError:
-                    continue
-            else:
-                # Single-level: icon-d2_de_lat-lon_single-level_*_???_2d_t_2m.grb2
-                try:
-                    var = '_'.join(parts[7:])
-                    key = (var, None)
-                except IndexError:
-                    continue
+                
+            var = parsed['variable']
+            level = parsed['level']
+            key = (var, level)
             
             files_by_var[key].append(file_path)
     
