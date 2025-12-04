@@ -32,12 +32,7 @@ def discover_resources() -> tuple[dict, dict]:
     logger.info(f"Found {total_vars} variable-level combinations")
     logger.info(f"Variables: {list(variables.keys())}")
     
-    # Step 2: Find ALL files at once (BIG TIME SAVER!)
-    logger.info("\nStep 2: Finding all files (ONE-TIME SCAN of all directories)...")
-    all_files = file_discovery.find_all_files_once(DATA_PATH, max_forecast_hours=2)
-    logger.info("File discovery complete!\n")
-    
-    return variables, all_files
+    return variables
 
 
 def collect_all_variables(variables: dict, all_files: dict) -> pl.DataFrame:
@@ -99,17 +94,20 @@ def run():
     """
     try:
         # 1. Discover resources
-        variables, all_files = discover_resources()
+        variables = discover_resources()
+
+        # 2. Find ALL files at once
+        all_files = file_discovery.find_all_files_once(DATA_PATH, max_forecast_hours=2)
         
-        # 2. Collect data
+        # 3. Collect data
         combined_df = collect_all_variables(variables, all_files)
         
-        # 3. Save data
+        # 4. Save data
         tables.L0.DwdWeather().write(df=combined_df, mode="replace")
         logger.info("Data successfully written to database")
         
     finally:
-        # 4. Cleanup
+        # 5. Cleanup
         logger.info("\nStep 6: Cleaning up temporary files...")
         grib_reader.cleanup_all()
         logger.info("Cleanup complete")
