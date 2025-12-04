@@ -2,7 +2,6 @@
 import polars as pl
 from loguru import logger
 from collections import defaultdict
-from pathlib import Path
 
 from efa import config, tables
 from efa.process_dwd_data import grib_reader, file_discovery, processor

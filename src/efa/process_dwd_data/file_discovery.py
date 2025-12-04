@@ -3,9 +3,11 @@ from pathlib import Path
 from loguru import logger
 from collections import defaultdict
 import re
+import time
+from typing import Union, Optional, Dict, List, Tuple
 
 
-def parse_dwd_filename(filename: str) -> dict | None:
+def parse_dwd_filename(filename: str) -> Optional[dict]:
     """Parse DWD GRIB2 filename using regex.
     
     Matches patterns like:
@@ -40,7 +42,7 @@ def parse_dwd_filename(filename: str) -> dict | None:
         }
 
 
-def discover_variables(data_path: Path) -> dict[str, list[str | None]]:
+def discover_variables(data_path: Path) -> Dict[str, List[Optional[str]]]:
     """Discover available variables by scanning one folder.
     
     Args:
@@ -100,8 +102,8 @@ def discover_variables(data_path: Path) -> dict[str, list[str | None]]:
     return variables
 
 
-def find_variable_files(data_path: Path, variable: str, level: str | None = None, 
-                       max_forecast_hours: int = 2) -> list[tuple[Path, int]]:
+def find_variable_files(data_path: Path, variable: str, level: Optional[str] = None, 
+                       max_forecast_hours: int = 2) -> List[Tuple[Path, int]]:
     """Find files for a variable, only first N hours from each run.
     
     Strategy: Use only the freshest forecasts (0-2 hours) from each run to build
@@ -135,9 +137,12 @@ def find_variable_files(data_path: Path, variable: str, level: str | None = None
     files_to_process = []
     
     # For each run, do ONE glob and filter results
+    last_log_time = time.time()
     for idx, run_dir in enumerate(run_dirs, 1):
-        if idx % 1000 == 0:
+        current_time = time.time()
+        if current_time - last_log_time >= 30:
             logger.info(f"  Scanned {idx}/{total_dirs} directories...")
+            last_log_time = current_time
         
         # Single glob per directory! The ??? wildcard matches any 3-digit hour
         for file_path in run_dir.glob(pattern):
@@ -160,7 +165,7 @@ def find_variable_files(data_path: Path, variable: str, level: str | None = None
     return files_to_process
 
 
-def find_all_files_once(data_path: Path, max_forecast_hours: int = 2) -> dict[tuple, list[Path]]:
+def find_all_files_once(data_path: Path, max_forecast_hours: int = 2) -> Dict[tuple, List[Path]]:
     """Find ALL files for ALL variables in one scan.
     
     This is much faster than scanning directories separately for each variable.
@@ -183,9 +188,12 @@ def find_all_files_once(data_path: Path, max_forecast_hours: int = 2) -> dict[tu
     # Store files grouped by (variable, level)
     files_by_var = defaultdict(list)
     
+    last_log_time = time.time()
     for idx, run_dir in enumerate(run_dirs, 1):
-        if idx % 1000 == 0:
+        current_time = time.time()
+        if current_time - last_log_time >= 30:
             logger.info(f"  Scanned {idx}/{total_dirs} directories...")
+            last_log_time = current_time
         
         # Get ALL deterministic .grb2 files in this directory at once
         for file_path in run_dir.glob("icon-d2_de_*.grb2"):
