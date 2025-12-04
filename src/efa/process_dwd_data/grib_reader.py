@@ -2,7 +2,7 @@
 import os
 import shutil
 import xarray as xr
-import pandas as pd
+import polars as pl
 from pathlib import Path
 from loguru import logger
 
@@ -15,7 +15,7 @@ TEMP_DIR.mkdir(parents=True, exist_ok=True)
 os.environ['CFGRIB_INDEXPATH'] = str(TEMP_DIR)
 
 
-def extract_multiple_points(file_path: Path, locations: list[dict], direct_read: bool = True) -> dict[int, tuple[pd.Timestamp, float]]:
+def extract_multiple_points(file_path: Path, locations: list[dict], direct_read: bool = True) -> dict[int, tuple[pl.Timestamp, float]]:
     """Extract values for multiple locations from a single GRIB file.
     
     This is much faster than reading the file multiple times.
@@ -54,11 +54,11 @@ def extract_multiple_points(file_path: Path, locations: list[dict], direct_read:
         
         # Get valid time once
         if 'valid_time' in ds.coords:
-            time = pd.Timestamp(ds['valid_time'].values.flat[0])
+            time = pl.Timestamp(ds['valid_time'].values.flat[0])
         else:
-            time = pd.Timestamp(ds['time'].values.flat[0])
+            time = pl.Timestamp(ds['time'].values.flat[0])
             if 'step' in ds.coords:
-                time += pd.Timedelta(ds['step'].values.flat[0])
+                time += pl.Timedelta(ds['step'].values.flat[0])
         
         # Extract values for all locations
         results = {}
