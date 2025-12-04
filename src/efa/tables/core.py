@@ -3,7 +3,8 @@ import polars as pl
 import duckdb
 from pathlib import Path
 from loguru import logger
-from typing import Literal
+from typing import Literal, Union, Optional, Tuple
+import re
 
 PATH_TO_DATA = Path(os.environ.get("EFA_DATA_PATH", Path(__file__).resolve().parents[3] / "data"))
 PATH_TO_DATA.mkdir(parents=True, exist_ok=True)
@@ -37,6 +38,12 @@ class Table:
                 f"Schema must be a dict mapping column names to Polars types, got {type(schema)}"
             )
         
+        if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", table_name):
+            raise ValueError(
+                f"Invalid table name '{table_name}'. "
+                "Table names must start with a letter or underscore and contain only alphanumeric characters and underscores."
+            )
+
         self.table_name = table_name
         self.schema = schema
         self._shape = None
@@ -182,7 +189,7 @@ class Table:
             return result > 0
     
     @property
-    def shape(self) -> tuple[int, int] | None:
+    def shape(self) -> Optional[Tuple[int, int]]:
         """Get shape of the table.
         
         Returns
