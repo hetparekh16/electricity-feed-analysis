@@ -6,8 +6,19 @@ dist/
 wheels/
 *.egg-info
 
-# Virtual environments
-.venv
-
 # Data
 data/*
+
+.obsidian
+
+# macOS
+.DS_Store
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
