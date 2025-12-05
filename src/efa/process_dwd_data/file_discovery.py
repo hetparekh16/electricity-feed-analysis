@@ -53,7 +53,7 @@ def discover_variables(data_path: Path) -> Dict[str, List[Optional[str]]]:
         Example: {'u': ['61', '62'], 't_2m': [None]}
     """
     # Find first valid subdirectory (skip 'today' if present)
-    base_path = data_path
+    base_path = Path(data_path)
     sample_dir = None
     for subdir in sorted(base_path.iterdir()):
         if subdir.is_dir() and subdir.name != 'today':
@@ -127,7 +127,7 @@ def find_variable_files(data_path: Path, variable: str, level: Optional[str] = N
         pattern = f"icon-d2_de_lat-lon_single-level_*_???_2d_{variable}.grb2"
     
     logger.info(f"Collecting first {max_forecast_hours + 1} hours (000-{max_forecast_hours:03d}) from each run...")
-    base_path = data_path
+    base_path = Path(data_path)
     
     # Get sorted list of run directories
     run_dirs = sorted([d for d in base_path.iterdir() if d.is_dir() and d.name != 'today'])
@@ -180,7 +180,7 @@ def find_all_files_once(data_path: Path, max_forecast_hours: int = 2) -> Dict[tu
     """
     logger.info(f"Scanning all directories ONCE for all variables (forecast hours 0-{max_forecast_hours})...")
     
-    base_path = data_path
+    base_path = Path(data_path)
     run_dirs = sorted([d for d in base_path.iterdir() if d.is_dir() and d.name != 'today'])
     total_dirs = len(run_dirs)
     logger.info(f"Found {total_dirs} run directories to scan")
