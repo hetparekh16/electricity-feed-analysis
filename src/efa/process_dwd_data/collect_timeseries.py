@@ -93,6 +93,10 @@ def run():
     4. Cleanup temporary files
     """
     try:
+        # 0. Initialize workspace (clean temp files)
+        # MUST be done before parallel workers start to avoid race conditions
+        grib_reader.initialize_workspace()
+
         # 1. Discover resources
         variables = discover_resources()
 

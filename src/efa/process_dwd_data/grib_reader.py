@@ -6,13 +6,31 @@ import datetime
 from pathlib import Path
 from loguru import logger
 
+from efa import config
+
 # Single temp directory for all GRIB operations
-TEMP_DIR = Path('data/temp/grib_processing')
-# Remove and recreate to ensure clean permissions
-if TEMP_DIR.exists():
-    shutil.rmtree(TEMP_DIR, ignore_errors=True)
-TEMP_DIR.mkdir(parents=True, exist_ok=True)
+# Use absolute path to be safe across different CWDs
+TEMP_DIR = config.PROJECT_ROOT / 'data' / 'temp' / 'grib_processing'
+
+# Set index path for cfgrib - this needs to run in every process (worker or main)
+# so that cfgrib knows where to look/write indices.
 os.environ['CFGRIB_INDEXPATH'] = str(TEMP_DIR)
+
+
+def initialize_workspace() -> None:
+    """Initialize the workspace for GRIB processing.
+    
+    This should ONLY be called once by the main process before starting workers.
+    It cleans up any existing temp files to ensure a fresh start.
+    """
+    if TEMP_DIR.exists():
+        try:
+            shutil.rmtree(TEMP_DIR, ignore_errors=True)
+        except Exception as e:
+            logger.warning(f"Could not remove temp dir {TEMP_DIR}: {e}")
+            
+    TEMP_DIR.mkdir(parents=True, exist_ok=True)
+
 
 
 def extract_multiple_points(file_path: Path, locations: list[dict], direct_read: bool = True) -> dict[int, tuple[datetime.datetime, float]]:
